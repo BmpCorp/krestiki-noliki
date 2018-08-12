@@ -48,3 +48,15 @@ ol, ul {
 .game-info {
   margin-left: 20px;
 }
+
+.x {
+  background-color: red;
+}
+
+.o {
+  background-color: steelblue;
+}
+
+.won-square {
+  background-color: lightgreen;
+}
