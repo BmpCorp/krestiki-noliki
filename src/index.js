@@ -26,7 +26,8 @@ class Board extends Component {
 	renderSquare = (i) => {
 		const winner = this.props.winner;
 		return (
-			<Square 
+			<Square
+				key = {i}
 				value={this.props.squares[i]} 
 				onClick={() => this.props.onClick(i)}
 				wonSquare={winner && winner.includes(i)}
@@ -35,23 +36,21 @@ class Board extends Component {
 	}
 
 	render() {
+		let rows = [];
+		for (let i = 0; i < 3; i++) {
+			let cols = [];
+			for (let j = 0; j < 3; j++) {
+				cols.push(this.renderSquare(i * 3 + j));
+			}
+			rows.push(
+				<div key={i} className="board-row">
+					{cols}
+				</div>
+			);
+		}
 		return (
 			<div>
-				<div className="board-row">
-					{this.renderSquare(0)}
-					{this.renderSquare(1)}
-					{this.renderSquare(2)}
-				</div>
-				<div className="board-row">
-					{this.renderSquare(3)}
-					{this.renderSquare(4)}
-					{this.renderSquare(5)}
-				</div>
-				<div className="board-row">
-					{this.renderSquare(6)}
-					{this.renderSquare(7)}
-					{this.renderSquare(8)}
-				</div>
+				{rows}
 			</div>
 		);
 	}
@@ -63,11 +62,13 @@ class Game extends Component {
 		this.state = {
 			history: [
 				{
-					squares: Array(9).fill(null)
+					squares: Array(9).fill(null),
+					lastSquare: null
 				}
 			],
 			stepNumber: 0,
-			xIsNext: true
+			xIsNext: true,
+			moveDirectOrder: true
 		};
 	}
 
@@ -80,7 +81,10 @@ class Game extends Component {
 		}
 		squares[i] = this.state.xIsNext ? "X" : "O";
 		this.setState({
-			history: history.concat([{squares: squares}]),
+			history: history.concat([{
+				squares: squares,
+				lastSquare: i
+			}]),
 			xIsNext: !this.state.xIsNext,
 			stepNumber: history.length
 		});
@@ -93,13 +97,26 @@ class Game extends Component {
 		});
 	}
 
+	toggleOrder = (event) => {
+		this.setState({moveDirectOrder:!this.state.moveDirectOrder});
+	}
+
 	render() {
 		const history = this.state.history;
 		const current = history[this.state.stepNumber];
 		const winner = calculateWinner(current.squares);
 
-		const moves = history.map((step, move) => {
-			const desc = move ? `Go to move #${move}` : "Go to start";
+		let moves = history.map((step, move) => {
+			let desc = move ? `Go to move #${move}` : "Go to start";
+			if (move) {
+				const col = step.lastSquare % 3 + 1;
+				const row = Math.floor(step.lastSquare / 3) + 1;
+				desc += ` (${col}, ${row})`;
+			}
+			if (step === current)
+			{
+				desc = <strong>{desc}</strong>;
+			}
 			return (
 				<li key={move}>
 					<button onClick={() => this.jumpTo(move)}>
@@ -108,10 +125,13 @@ class Game extends Component {
 				</li>
 			);
 		});
+		if (!this.state.moveDirectOrder) moves.reverse();
 
 		let status;
 		if (winner) {
 			status = `Winner: ${current.squares[winner[0]]}!`;
+		} else if (current.squares.every(i => i)) {
+			status = "No one wins";
 		} else {
 			status = `Next player: ${this.state.xIsNext ? "X" : "O"}`;
 		}
@@ -127,7 +147,10 @@ class Game extends Component {
 				</div>
 				<div className="game-info">
 					<div>{status}</div>
-					<ol>{moves}</ol>
+					<button onClick={(event) => this.toggleOrder(event)}>
+						{`Order: ${this.state.moveDirectOrder ? "direct" : "reversed"}`}
+					</button>
+					<ol reversed={!this.state.moveDirectOrder}>{moves}</ol>
 				</div>
 			</div>
 		);
